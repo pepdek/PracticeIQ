@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react"
 import { usePlaidLink } from "react-plaid-link"
+import type { PlaidLinkOnSuccess } from "react-plaid-link"
 import { callFunction } from "../../lib/supabase"
 
 interface PlaidAccount {
@@ -27,17 +28,19 @@ export default function Step3Plaid({
   const [trustId, setTrustId] = useState("")
   const [saving, setSaving] = useState(false)
 
-  const onPlaidSuccess = useCallback(
-    (token: string, metadata: {
-      institution: { institution_id: string; name: string }
-      accounts: PlaidAccount[]
-    }) => {
+  const onPlaidSuccess = useCallback<PlaidLinkOnSuccess>(
+    (token, metadata) => {
       setPublicToken(token)
-      setInstitutionId(metadata.institution.institution_id)
-      setInstitutionName(metadata.institution.name)
-      setAccounts(metadata.accounts)
-      // Pre-select the first account as operating
-      if (metadata.accounts.length > 0) setOperatingId(metadata.accounts[0].id)
+      setInstitutionId(metadata.institution?.institution_id ?? "")
+      setInstitutionName(metadata.institution?.name ?? "")
+      const mapped: PlaidAccount[] = metadata.accounts.map((a) => ({
+        id: a.id,
+        name: a.name,
+        mask: a.mask ?? "",
+        subtype: a.subtype ?? "",
+      }))
+      setAccounts(mapped)
+      if (mapped.length > 0) setOperatingId(mapped[0].id)
     },
     []
   )
