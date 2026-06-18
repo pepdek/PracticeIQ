@@ -200,16 +200,23 @@ serve(async (req: Request) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   )
 
+  const body = req.headers.get("content-type")?.includes("application/json")
+    ? await req.json().catch(() => ({}))
+    : {}
+  const singleAttorneyId: string | null = body?.attorney_id ?? null
+
   const weekEnding = getWeekEnding()
   const weekStart = addDays(weekEnding, -6)
 
   // Active subscribers with a connected Plaid item
-  const { data: rows, error: fetchErr } = await supabase
+  let query = supabase
     .from("plaid_items")
     .select(
       "attorney_id, access_token, operating_account_id, trust_account_id, attorneys!inner(subscription_status)"
     )
     .eq("attorneys.subscription_status", "active")
+  if (singleAttorneyId) query = query.eq("attorney_id", singleAttorneyId)
+  const { data: rows, error: fetchErr } = await query
 
   if (fetchErr) {
     return new Response(JSON.stringify({ error: fetchErr.message }), {

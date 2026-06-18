@@ -16,6 +16,20 @@ interface ConnectionStatus {
   google_connected: boolean
 }
 
+interface LastScore {
+  composite_score: number
+  week_ending_date: string
+  score_delta: number | null
+  token: string | null
+}
+
+function scoreStatusLabel(s: number): string {
+  if (s >= 85) return "Healthy"
+  if (s >= 70) return "Stable"
+  if (s >= 55) return "Needs attention"
+  return "At risk"
+}
+
 function StatusBadge({ connected }: { connected: boolean }) {
   return connected ? (
     <span className="inline-flex items-center gap-1 text-green-700 bg-green-50 border border-green-200 rounded-full px-2.5 py-0.5 text-xs font-medium">
@@ -33,25 +47,51 @@ export default function Account() {
   const navigate = useNavigate()
   const [attorney, setAttorney] = useState<AttorneyData | null>(null)
   const [connections, setConnections] = useState<ConnectionStatus | null>(null)
+  const [lastScore, setLastScore] = useState<LastScore | null>(null)
   const [unsubscribeLoading, setUnsubscribeLoading] = useState(false)
   const [unsubscribeError, setUnsubscribeError] = useState("")
   const [unsubscribeConfirm, setUnsubscribeConfirm] = useState(false)
 
   useEffect(() => {
     if (!session) return
+    const uid = session.user.id
     Promise.all([
       supabase
         .from("attorneys")
         .select("email, subscription_status, last_email_sent_at, last_email_subject")
-        .eq("id", session.user.id)
+        .eq("id", uid)
         .single()
         .then(({ data }) => setAttorney(data)),
       supabase
         .from("connection_status")
         .select("clio_connected, plaid_connected, google_connected")
-        .eq("attorney_id", session.user.id)
+        .eq("attorney_id", uid)
         .single()
         .then(({ data }) => setConnections(data)),
+      // Most recent score + most recent token for drill-down link
+      supabase
+        .from("practice_scores")
+        .select("composite_score, week_ending_date, score_delta")
+        .eq("attorney_id", uid)
+        .order("week_ending_date", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then(async ({ data: ps }) => {
+          if (!ps) return
+          const { data: tok } = await supabase
+            .from("score_tokens")
+            .select("token")
+            .eq("attorney_id", uid)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          setLastScore({
+            composite_score: Number(ps.composite_score),
+            week_ending_date: ps.week_ending_date,
+            score_delta: ps.score_delta !== null ? Number(ps.score_delta) : null,
+            token: tok?.token ?? null,
+          })
+        }),
     ])
   }, [session])
 
@@ -104,6 +144,48 @@ export default function Account() {
           <h1 className="text-2xl font-bold text-gray-900">PracticeIQ</h1>
           <p className="text-sm text-gray-500 mt-0.5">{attorney.email}</p>
         </div>
+
+        {/* Last score summary */}
+        {lastScore && (
+          <div
+            className="rounded-xl mb-4 px-6 py-5 flex items-center justify-between"
+            style={{ backgroundColor: "#1a3a2a" }}
+          >
+            <div>
+              <p className="text-white/50 text-xs tracking-widest uppercase mb-1">
+                Practice Health Score
+              </p>
+              <div className="flex items-baseline gap-3">
+                <span
+                  className="text-white tabular-nums"
+                  style={{ fontFamily: "'DM Serif Display', serif", fontSize: "48px", lineHeight: 1 }}
+                >
+                  {lastScore.composite_score}
+                </span>
+                <span className="text-white/50 text-xs">
+                  {scoreStatusLabel(lastScore.composite_score)}
+                </span>
+              </div>
+              {lastScore.score_delta !== null && (
+                <p className="text-white/40 text-xs mt-1">
+                  {lastScore.score_delta > 0
+                    ? `↑ ${lastScore.score_delta.toFixed(0)} from last week`
+                    : lastScore.score_delta < 0
+                    ? `↓ ${Math.abs(lastScore.score_delta).toFixed(0)} from last week`
+                    : "Unchanged from last week"}
+                </p>
+              )}
+            </div>
+            {lastScore.token && (
+              <a
+                href={`/score/${lastScore.token}`}
+                className="text-white/60 text-xs hover:text-white transition-colors flex-shrink-0"
+              >
+                View breakdown →
+              </a>
+            )}
+          </div>
+        )}
 
         {/* Connected sources */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-4">

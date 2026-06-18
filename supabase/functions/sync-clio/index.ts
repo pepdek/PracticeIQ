@@ -263,17 +263,25 @@ serve(async (req: Request) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   )
 
+  // Optional single-attorney mode — used by first-run-score to avoid syncing all users.
+  const body = req.headers.get("content-type")?.includes("application/json")
+    ? await req.json().catch(() => ({}))
+    : {}
+  const singleAttorneyId: string | null = body?.attorney_id ?? null
+
   const weekEnding = getWeekEnding()
   const weekStart = addDays(weekEnding, -6) // Monday
 
   // Active subscribers with a connected Clio account
-  const { data: rows, error: fetchErr } = await supabase
+  let query = supabase
     .from("oauth_tokens")
     .select(
       "attorney_id, access_token, refresh_token, token_expires_at, attorneys!inner(subscription_status)"
     )
     .eq("provider", "clio")
     .eq("attorneys.subscription_status", "active")
+  if (singleAttorneyId) query = query.eq("attorney_id", singleAttorneyId)
+  const { data: rows, error: fetchErr } = await query
 
   if (fetchErr) {
     return new Response(JSON.stringify({ error: fetchErr.message }), {

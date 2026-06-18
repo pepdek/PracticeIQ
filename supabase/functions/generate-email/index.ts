@@ -1,6 +1,18 @@
+// generate-email — V2 Practice Health Score format.
+// Reads pre-calculated scores from practice_scores (written by calculate-score),
+// re-derives component details from weekly_snapshots for Claude's context,
+// creates a drill-down token, calls Claude for the email body, sends via Resend,
+// and writes observation_text / one_action back to practice_scores.
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { addDays, getWeekEnding, round2, toISODate } from "../_shared/week.ts"
+import {
+  calculateScore,
+  pivotSnapshots,
+  ScoreConfig,
+  ScoreResult,
+} from "../_shared/score-calculator.ts"
+import { addDays, getWeekEnding, toISODate } from "../_shared/week.ts"
 
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages"
 const RESEND_API = "https://api.resend.com/emails"
@@ -8,151 +20,73 @@ const FROM_ADDRESS = "hello@practiceiq.co"
 const MODEL = "claude-sonnet-4-6"
 
 // ---------------------------------------------------------------------------
-// Types
+// System prompt — V2 score-first format
 // ---------------------------------------------------------------------------
 
-interface SnapshotRow {
-  week_ending_date: string
-  source: string
-  metric_key: string
-  metric_value: number
-}
+const SYSTEM_PROMPT = `You write the weekly Practice Health Score email for solo and small law firm attorneys.
 
-interface ClioWeek {
-  matters_opened?: number
-  matters_closed?: number
-  hours_billed?: number
-  hours_collected?: number
-  invoices_sent_count?: number
-  invoices_sent_amount?: number
-  invoices_paid_count?: number
-  invoices_paid_amount?: number
-  ar_0_30?: number
-  ar_31_60?: number
-  ar_61_90?: number
-  ar_90_plus?: number
-  collection_rate_pct?: number | null  // derived, pre-computed for Claude
-}
-
-interface PlaidWeek {
-  deposits_total?: number
-  operating_balance?: number
-  trust_balance?: number
-}
-
-interface GoogleWeek {
-  star_rating?: number
-  total_review_count?: number
-  new_reviews_count?: number
-}
-
-interface WeekSnapshot {
-  week_ending: string
-  clio: ClioWeek
-  plaid: PlaidWeek
-  google: GoogleWeek
-}
-
-// ---------------------------------------------------------------------------
-// System prompt — matches spec exactly
-// ---------------------------------------------------------------------------
-
-const SYSTEM_PROMPT = `You are a business intelligence analyst for solo and small law firm operators. Your job is to read a week of practice data and write one plain-English email.
-
-Rules:
-- Never mention client names
-- Never give legal advice
-- Never give financial advice
+Rules (non-negotiable):
+- Never mention client names or case details
+- Never give legal or financial advice
 - Never use the word "AI"
-- Never exceed 4 lines per section
-- Every number in the email must come exactly from the data provided — do not fabricate or estimate any figure
-- Every section must end with exactly one action implication: a single sentence starting with a concrete next step for the attorney
-- If a data source is missing or null for this week, omit those numbers and note the source was unavailable rather than guessing
+- Every number in the email must come exactly from the provided data — do not invent or estimate any figure
+- Be direct. Short sentences. No filler.
 
-Output format — follow this exactly, preserving the header labels:
+You will receive a JSON object with the attorney's score data. Write the email body only (no subject line). Follow the format below exactly, preserving the section headers.
 
-SUBJECT: Your practice this week — 4 things to know
+FORMAT A — when any dimension score is below 18 out of 20:
 
-BILLING & COLLECTIONS
-[2–4 lines. Cover hours billed this week, hours collected, collection rate this week vs. 8-week average. End with one action implication.]
+PRACTICE HEALTH SCORE: {composite_score}  ({delta_symbol}{|delta|} from last week)
 
-CASH POSITION
-[2–4 lines. Cover deposits this week, current operating account balance, and the gap between total Clio AR outstanding and actual deposits received. End with one action implication.]
+What changed:
+[2–3 lines. Identify the dimension with the largest drop and explain why using the component data. Be specific — use the exact numbers provided.]
 
-REPUTATION
-[2–4 lines. Cover current star rating, new reviews this week, and review velocity trend vs. prior weeks. End with one action implication.]
+Everything else held steady.
+[List the other four dimensions on one line: Name: X/20 · Name: X/20 · Name: X/20 · Name: X/20]
 
-KEY OBSERVATION
-[2–4 lines. Name the single most significant change vs. the prior 8 weeks and state its plain-English business implication. End with one action implication.]
+One thing to do this week:
+[1–2 sentences. One concrete, specific action based on what the data shows. Never a generic suggestion.]
 
----
-Reply to this email with any questions. Data sourced from Clio, Plaid, and Google Business Profile.`
+FORMAT B — when every dimension score is 18 or above:
+
+PRACTICE HEALTH SCORE: {composite_score}
+
+Your practice is running well this week. Nothing needs your attention.
+We'll be back next Sunday.
+
+Output the email body only — no preamble, no explanation, nothing before the first line.`
 
 // ---------------------------------------------------------------------------
-// Data preparation
+// Subject line — computed, not written by Claude (guarantees correct score)
 // ---------------------------------------------------------------------------
 
-function collectionRatePct(billed?: number, collected?: number): number | null {
-  if (!billed || billed === 0) return null
-  return round2(((collected ?? 0) / billed) * 100)
-}
-
-function pivotSnapshots(rows: SnapshotRow[]): WeekSnapshot[] {
-  const byWeek = new Map<string, WeekSnapshot>()
-
-  for (const row of rows) {
-    const wk = row.week_ending_date
-    if (!byWeek.has(wk)) {
-      byWeek.set(wk, { week_ending: wk, clio: {}, plaid: {}, google: {} })
-    }
-    const snap = byWeek.get(wk)!
-    const target = snap[row.source as "clio" | "plaid" | "google"] as Record<string, number>
-    target[row.metric_key] = Number(row.metric_value)
-  }
-
-  // Compute derived collection_rate_pct per week so Claude doesn't need to
-  for (const snap of byWeek.values()) {
-    snap.clio.collection_rate_pct = collectionRatePct(
-      snap.clio.hours_billed,
-      snap.clio.hours_collected
-    )
-  }
-
-  // Sort newest first
-  return Array.from(byWeek.values()).sort((a, b) =>
-    b.week_ending.localeCompare(a.week_ending)
-  )
-}
-
-// 8-week average collection rate: mean of weeks that have both hours fields
-function avgCollectionRate(weeks: WeekSnapshot[]): number | null {
-  const rates = weeks
-    .map((w) => w.clio.collection_rate_pct)
-    .filter((r): r is number => r !== null && r !== undefined)
-  if (rates.length === 0) return null
-  return round2(rates.reduce((s, r) => s + r, 0) / rates.length)
-}
-
-function buildUserMessage(
-  weeks: WeekSnapshot[],
-  weekEnding: string,
-  avgCollRate: number | null
+function buildSubject(
+  score: number,
+  delta: number | null,
+  priorScores: number[]
 ): string {
-  const current = weeks[0]
-  const prior = weeks.slice(1)
+  let trend: string
 
-  const payload = {
-    week_ending: weekEnding,
-    eight_week_avg_collection_rate_pct: avgCollRate,
-    current_week: current,
-    prior_7_weeks: prior,
+  if (delta === null || Math.round(Math.abs(delta)) === 0) {
+    trend = "no change this week"
+  } else if (delta > 0) {
+    const pts = Math.round(delta)
+    // If this is the highest score in the history window, say so
+    if (priorScores.length >= 4 && score > Math.max(...priorScores)) {
+      const weeks = priorScores.length + 1
+      const months = Math.round(weeks / 4)
+      trend = months >= 2
+        ? `your best score in ${months} months`
+        : `your best score in ${weeks} weeks`
+    } else {
+      trend = `up ${pts} point${pts === 1 ? "" : "s"} this week`
+    }
+  } else {
+    const pts = Math.round(Math.abs(delta))
+    trend = `down ${pts} point${pts === 1 ? "" : "s"}. Here's why.`
   }
 
-  return (
-    "Generate the weekly practice email using the data below. " +
-    "Return only the formatted email — no preamble, no explanation.\n\n" +
-    JSON.stringify(payload, null, 2)
-  )
+  return `Your Practice Health Score: ${score} — ${trend}`
 }
 
 // ---------------------------------------------------------------------------
@@ -169,7 +103,7 @@ async function callClaude(userMessage: string): Promise<string> {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 1500,
+      max_tokens: 800,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
     }),
@@ -187,71 +121,47 @@ async function callClaude(userMessage: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// Output validation
+// Output validation — V2 format
 // ---------------------------------------------------------------------------
 
-const REQUIRED_SECTIONS = [
-  "BILLING & COLLECTIONS",
-  "CASH POSITION",
-  "REPUTATION",
-  "KEY OBSERVATION",
-]
-
-const REQUIRED_FOOTER = "Data sourced from Clio, Plaid, and Google Business Profile."
-
-function validateEmail(raw: string): { subject: string; body: string } {
-  const lines = raw.trim().split("\n")
-
-  // Subject must be first non-empty line
-  const subjectLine = lines.find((l) => l.startsWith("SUBJECT:"))
-  if (!subjectLine) throw new Error('Missing "SUBJECT:" line in Claude output')
-  const subject = subjectLine.replace(/^SUBJECT:\s*/, "").trim()
-
-  for (const section of REQUIRED_SECTIONS) {
-    if (!raw.includes(section)) {
-      throw new Error(`Missing section "${section}" in Claude output`)
-    }
-  }
-
-  if (!raw.includes(REQUIRED_FOOTER)) {
-    throw new Error("Missing required footer in Claude output")
+function validateEmailBody(raw: string): {
+  body: string
+  observationText: string | null
+  oneAction: string | null
+} {
+  if (!raw.includes("PRACTICE HEALTH SCORE:")) {
+    throw new Error('Missing "PRACTICE HEALTH SCORE:" line in Claude output')
   }
 
   if (/\bAI\b/i.test(raw)) {
     throw new Error('Claude output contains forbidden word "AI"')
   }
 
-  // Body = everything after the SUBJECT line
-  const subjectIndex = lines.indexOf(subjectLine)
-  const body = lines
-    .slice(subjectIndex + 1)
-    .join("\n")
-    .trim()
+  // Extract observation (What changed section)
+  const observationMatch = raw.match(
+    /What changed:\n([\s\S]*?)(?:\nEverything else held steady|\nOne thing to do|$)/
+  )
+  const observationText = observationMatch ? observationMatch[1].trim() : null
 
-  return { subject, body }
+  // Extract one action
+  const actionMatch = raw.match(/One thing to do this week:\n([\s\S]*?)(?:\n\n|$)/)
+  const oneAction = actionMatch ? actionMatch[1].trim() : null
+
+  return { body: raw.trim(), observationText, oneAction }
 }
 
 // ---------------------------------------------------------------------------
 // Resend
 // ---------------------------------------------------------------------------
 
-async function sendEmail(
-  to: string,
-  subject: string,
-  body: string
-): Promise<string> {
+async function sendEmail(to: string, subject: string, body: string): Promise<string> {
   const res = await fetch(RESEND_API, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")!}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      from: FROM_ADDRESS,
-      to,
-      subject,
-      text: body,
-    }),
+    body: JSON.stringify({ from: FROM_ADDRESS, to, subject, text: body }),
   })
 
   if (!res.ok) {
@@ -260,7 +170,7 @@ async function sendEmail(
   }
 
   const data = await res.json()
-  return data.id as string  // Resend message ID
+  return data.id as string
 }
 
 // ---------------------------------------------------------------------------
@@ -271,38 +181,162 @@ async function processAttorney(
   supabase: SupabaseClient,
   attorneyId: string,
   email: string,
-  weekEnding: Date
+  weekEndStr: string
 ): Promise<void> {
-  const weekEndStr = toISODate(weekEnding)
-  // Fetch 8 weeks back (7 prior + current)
-  const eighthSundayAgo = addDays(weekEnding, -49)
+  // 1. Read this week's pre-calculated score
+  const { data: scoreRow, error: scoreErr } = await supabase
+    .from("practice_scores")
+    .select("*")
+    .eq("attorney_id", attorneyId)
+    .eq("week_ending_date", weekEndStr)
+    .single()
 
-  const { data: rows, error: snapErr } = await supabase
+  if (scoreErr || !scoreRow) {
+    throw new Error(`No calculated score for ${weekEndStr} — run calculate-score first`)
+  }
+
+  // 2. Read prior 12 weeks for trend context in subject line
+  const lookback12Start = toISODate(addDays(new Date(weekEndStr + "T12:00:00"), -12 * 7))
+  const { data: historyRows } = await supabase
+    .from("practice_scores")
+    .select("week_ending_date, composite_score")
+    .eq("attorney_id", attorneyId)
+    .gte("week_ending_date", lookback12Start)
+    .lt("week_ending_date", weekEndStr)
+    .order("week_ending_date", { ascending: false })
+
+  const priorScores = (historyRows ?? []).map((r) => Number(r.composite_score))
+
+  // 3. Re-derive dimension components from snapshots (needed for Claude's "why")
+  const { data: configRow } = await supabase
+    .from("score_config")
+    .select(
+      "revenue_capture_weight, practice_velocity_weight, risk_exposure_weight, financial_position_weight, reputation_velocity_weight"
+    )
+    .single()
+
+  const config: ScoreConfig = configRow
+    ? {
+        revenue_capture_weight: Number(configRow.revenue_capture_weight),
+        practice_velocity_weight: Number(configRow.practice_velocity_weight),
+        risk_exposure_weight: Number(configRow.risk_exposure_weight),
+        financial_position_weight: Number(configRow.financial_position_weight),
+        reputation_velocity_weight: Number(configRow.reputation_velocity_weight),
+      }
+    : {
+        revenue_capture_weight: 20,
+        practice_velocity_weight: 20,
+        risk_exposure_weight: 20,
+        financial_position_weight: 20,
+        reputation_velocity_weight: 20,
+      }
+
+  const lookback13Start = toISODate(addDays(new Date(weekEndStr + "T12:00:00"), -13 * 7))
+  const { data: snapRows } = await supabase
     .from("weekly_snapshots")
     .select("week_ending_date, source, metric_key, metric_value")
     .eq("attorney_id", attorneyId)
-    .gte("week_ending_date", toISODate(eighthSundayAgo))
+    .gte("week_ending_date", lookback13Start)
     .lte("week_ending_date", weekEndStr)
-    .order("week_ending_date", { ascending: false })
 
-  if (snapErr) throw new Error(`Snapshot fetch error: ${snapErr.message}`)
-
-  const weeks = pivotSnapshots(rows ?? [])
-
-  // Must have at least current week data — skip if syncs all failed
-  if (weeks.length === 0 || weeks[0].week_ending !== weekEndStr) {
-    throw new Error(`No snapshot data found for week ending ${weekEndStr}`)
+  let components: ScoreResult | null = null
+  if (snapRows?.length) {
+    const allSnaps = pivotSnapshots(snapRows)
+    const current = allSnaps.find((s) => s.week_ending === weekEndStr)
+    if (current) {
+      const history = allSnaps.filter((s) => s.week_ending < weekEndStr)
+      components = calculateScore(current, history, config)
+    }
   }
 
-  const avgCollRate = avgCollectionRate(weeks)
-  const userMessage = buildUserMessage(weeks, weekEndStr, avgCollRate)
+  // 4. Build the subject line (programmatic — guarantees correct score)
+  const compositeScore = Number(scoreRow.composite_score)
+  const scoreDelta = scoreRow.score_delta !== null ? Number(scoreRow.score_delta) : null
+  const subject = buildSubject(compositeScore, scoreDelta, priorScores)
 
-  const rawOutput = await callClaude(userMessage)
-  const { subject, body } = validateEmail(rawOutput)
+  // 5. Build Claude prompt with score + component data
+  const deltaSymbol = scoreDelta === null ? "" : scoreDelta >= 0 ? "↑" : "↓"
+  const deltaAbs = scoreDelta !== null ? Math.abs(scoreDelta).toFixed(1) : null
 
-  const resendId = await sendEmail(email, subject, body)
+  const promptData = {
+    week_ending: weekEndStr,
+    composite_score: compositeScore,
+    score_delta: scoreDelta,
+    delta_display: deltaAbs ? `${deltaSymbol}${deltaAbs}` : "first week",
+    prior_week_score: scoreRow.prior_week_score !== null ? Number(scoreRow.prior_week_score) : null,
+    dimensions: {
+      revenue_capture: {
+        score: scoreRow.revenue_capture_score !== null ? Number(scoreRow.revenue_capture_score) : null,
+        prior_score: null,  // not stored — use delta directionally
+        weight: config.revenue_capture_weight,
+        calculated: scoreRow.revenue_capture_calculated,
+        components: components?.revenue_capture.components ?? {},
+      },
+      practice_velocity: {
+        score: scoreRow.practice_velocity_score !== null ? Number(scoreRow.practice_velocity_score) : null,
+        weight: config.practice_velocity_weight,
+        calculated: scoreRow.practice_velocity_calculated,
+        components: components?.practice_velocity.components ?? {},
+      },
+      risk_exposure: {
+        score: scoreRow.risk_exposure_score !== null ? Number(scoreRow.risk_exposure_score) : null,
+        weight: config.risk_exposure_weight,
+        calculated: scoreRow.risk_exposure_calculated,
+        components: components?.risk_exposure.components ?? {},
+      },
+      financial_position: {
+        score: scoreRow.financial_position_score !== null ? Number(scoreRow.financial_position_score) : null,
+        weight: config.financial_position_weight,
+        calculated: scoreRow.financial_position_calculated,
+        components: components?.financial_position.components ?? {},
+      },
+      reputation_velocity: {
+        score: scoreRow.reputation_velocity_score !== null ? Number(scoreRow.reputation_velocity_score) : null,
+        weight: config.reputation_velocity_weight,
+        calculated: scoreRow.reputation_velocity_calculated,
+        components: components?.reputation_velocity.components ?? {},
+      },
+    },
+  }
 
-  // Log the send
+  const userMessage =
+    "Write the weekly email body using the score data below. " +
+    "Follow the system prompt format exactly.\n\n" +
+    JSON.stringify(promptData, null, 2)
+
+  // 6. Call Claude for body
+  const rawBody = await callClaude(userMessage)
+  const { body, observationText, oneAction } = validateEmailBody(rawBody)
+
+  // 7. Create drill-down token
+  const { data: tokenRow, error: tokenErr } = await supabase
+    .from("score_tokens")
+    .insert({ attorney_id: attorneyId, score_id: scoreRow.id })
+    .select("token")
+    .single()
+
+  if (tokenErr || !tokenRow) throw new Error(`Token creation failed: ${tokenErr?.message}`)
+
+  const appUrl = Deno.env.get("APP_URL") ?? "https://iq.lawstack.co"
+  const drillDownUrl = `${appUrl}/score/${tokenRow.token}`
+
+  // 8. Append ephemeral URL — Claude doesn't write this line
+  const fullBody = `${body}\n\nSee the detail: ${drillDownUrl}  (expires Sunday)`
+
+  // 9. Send
+  const resendId = await sendEmail(email, subject, fullBody)
+
+  // 10. Write observation + action back to practice_scores
+  await supabase
+    .from("practice_scores")
+    .update({
+      observation_text: observationText,
+      one_action: oneAction,
+      observation_generated_at: new Date().toISOString(),
+    })
+    .eq("id", scoreRow.id)
+
+  // 11. Log the send
   await supabase.from("email_log").insert({
     attorney_id: attorneyId,
     week_ending_date: weekEndStr,
@@ -310,7 +344,7 @@ async function processAttorney(
     resend_message_id: resendId,
   })
 
-  // Update attorney record for /account page display
+  // 12. Update attorney record for /account display
   await supabase
     .from("attorneys")
     .update({
@@ -339,9 +373,8 @@ serve(async (req: Request) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   )
 
-  const weekEnding = getWeekEnding()
+  const weekEndStr = toISODate(getWeekEnding())
 
-  // Active subscribers only — cancelled subscriptions must not receive emails
   const { data: attorneys, error: fetchErr } = await supabase
     .from("attorneys")
     .select("id, email")
@@ -363,7 +396,7 @@ serve(async (req: Request) => {
 
   for (const attorney of attorneys ?? []) {
     try {
-      await processAttorney(supabase, attorney.id, attorney.email, weekEnding)
+      await processAttorney(supabase, attorney.id, attorney.email, weekEndStr)
       results.push({ attorney_id: attorney.id, status: "sent" })
     } catch (err) {
       console.error(`generate-email failed for ${attorney.id}:`, err)
@@ -379,12 +412,7 @@ serve(async (req: Request) => {
   const failed = results.filter((r) => r.status === "error").length
 
   return new Response(
-    JSON.stringify({
-      week_ending: toISODate(weekEnding),
-      sent,
-      failed,
-      results,
-    }),
+    JSON.stringify({ week_ending: weekEndStr, sent, failed, results }),
     { headers: { "Content-Type": "application/json" } }
   )
 })

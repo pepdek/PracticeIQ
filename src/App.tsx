@@ -5,18 +5,12 @@ import Account from "./pages/Account"
 import AuthCallbackClio from "./pages/AuthCallbackClio"
 import AuthCallbackGoogle from "./pages/AuthCallbackGoogle"
 import StripeSuccess from "./pages/StripeSuccess"
+import FirstRunScore from "./pages/FirstRunScore"
+import ScoreDrillDown from "./pages/ScoreDrillDown"
+import Landing from "./pages/Landing"
 
 export default function App() {
   const session = useSession()
-
-  // undefined = still loading auth state
-  if (session === undefined) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-400 text-sm">Loading…</div>
-      </div>
-    )
-  }
 
   return (
     <BrowserRouter>
@@ -26,15 +20,20 @@ export default function App() {
         <Route path="/auth/google" element={<AuthCallbackGoogle />} />
         <Route path="/stripe/success" element={<StripeSuccess />} />
         <Route
-          path="/account"
-          element={session ? <Account /> : <Navigate to="/onboarding" replace />}
+          path="/first-run"
+          element={session ? <FirstRunScore /> : session === null ? <Navigate to="/onboarding" replace /> : null}
         />
         <Route
-          path="/"
-          element={
-            session ? <Navigate to="/account" replace /> : <Navigate to="/onboarding" replace />
-          }
+          path="/account"
+          element={session ? <Account /> : session === null ? <Navigate to="/onboarding" replace /> : null}
         />
+        {/* Root: redirect logged-in users, show Landing for everyone else (including loading) */}
+        <Route
+          path="/"
+          element={session ? <Navigate to="/account" replace /> : <Landing />}
+        />
+        {/* Public — no auth required, token is the credential */}
+        <Route path="/score/:token" element={<ScoreDrillDown />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

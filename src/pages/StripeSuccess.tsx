@@ -7,7 +7,7 @@ export default function StripeSuccess() {
   // Stripe's webhook activates the subscription asynchronously.
   // Give it a moment before redirecting to /account so the status is current.
   useEffect(() => {
-    const timer = setTimeout(() => navigate("/account", { replace: true }), 2500)
+    const timer = setTimeout(() => navigate("/first-run", { replace: true }), 2500)
     return () => clearTimeout(timer)
   }, [])
 
