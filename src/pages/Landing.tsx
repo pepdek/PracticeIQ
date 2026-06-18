@@ -7,9 +7,11 @@ const C = {
   ash:   "#F5F4F0",
   smoke: "#E8E6E1",
   slate: "#6B6560",
-  ember: "#D94F2B",
+  ember: "#D94F2B",     // accent only — links, badges, version callout
   emberDark: "#B83D1F",
-  gold:  "#C8971A",   // --sundial-gold — brass instrument face
+  gold:  "#C8971A",     // --sundial-gold — score display only
+  green: "#2ECC71",     // --color-campfire-green — primary CTA exclusively
+  greenDark: "#25A85C", // hover state for green
   white: "#FFFFFF",
 }
 
@@ -173,15 +175,15 @@ export default function Landing() {
               Sign in
             </button>
             <button onClick={onCTA} style={{
-              background: C.ember, border: "none", cursor: "pointer",
-              fontFamily: F.body, fontSize: 13, fontWeight: 600, color: C.white,
+              background: C.green, border: "none", cursor: "pointer",
+              fontFamily: F.body, fontSize: 13, fontWeight: 600, color: C.coal,
               padding: "8px 20px", borderRadius: 999,
               transition: "background 150ms, transform 150ms",
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.emberDark; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.02)" }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.ember; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.greenDark; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.02)" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.green; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)" }}
             >
-              Get started
+              Get it free
             </button>
           </div>
         </div>
@@ -208,7 +210,7 @@ export default function Landing() {
               </div>
 
               <h1 style={{
-                fontFamily: F.display, fontSize: "clamp(36px, 4vw, 56px)",
+                fontFamily: F.display, fontSize: "clamp(36px, 4vw, 64px)",
                 fontWeight: 700, lineHeight: 1.1, color: C.coal,
                 letterSpacing: "-0.02em", margin: "0 0 20px",
                 maxWidth: 580,
@@ -248,63 +250,99 @@ export default function Landing() {
               </p>
             </div>
 
-            {/* Right — sticky CTA card */}
+            {/* Right — Campfire-style post-it CTA card */}
             <div style={{ position: "sticky", top: 80 }}>
               <div style={{
                 background: C.white, border: `1px solid ${C.smoke}`,
                 borderRadius: 12, padding: 32,
                 boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
               }}>
-                {/* Score preview */}
-                <div style={{
-                  background: C.coal, borderRadius: 8, padding: "24px 24px 20px",
-                  marginBottom: 24,
-                }}>
-                  <p style={{ fontFamily: F.body, fontSize: 10, fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", margin: "0 0 8px" }}>
-                    Practice Health Score
-                  </p>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 4 }}>
-                    <span style={{ fontFamily: F.display, fontSize: 64, lineHeight: 1, color: C.gold, fontWeight: 700 }}>74</span>
-                    <span style={{ fontFamily: F.body, fontSize: 12, color: "rgba(255,255,255,0.4)", padding: "3px 8px", background: "rgba(255,255,255,0.08)", borderRadius: 999 }}>Stable</span>
+                {/* Card header — wordmark + score side-by-side */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+                  <div>
+                    <p style={{ fontFamily: F.body, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.coal, margin: "0 0 2px" }}>
+                      Sundial
+                    </p>
+                    <p style={{ fontFamily: F.body, fontSize: 12, color: C.slate, margin: 0 }}>
+                      one number. every week.
+                    </p>
                   </div>
-                  <p style={{ fontFamily: F.body, fontSize: 12, color: "rgba(255,255,255,0.35)", margin: 0 }}>↓ 6 from last week</p>
-                  <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px" }}>
-                    {[["Revenue", 12.5], ["Velocity", 17], ["Risk", 16], ["Financial", 13.5], ["Reputation", 13]].map(([label, score]) => (
-                      <div key={String(label)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontFamily: F.body, fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{label}</span>
-                        <span style={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{score}/20</span>
-                      </div>
-                    ))}
+                  {/* Score pill — the product made visible */}
+                  <div style={{ textAlign: "right" }}>
+                    <span style={{
+                      fontFamily: F.display, fontSize: 40, fontWeight: 700,
+                      lineHeight: 1, color: C.gold, display: "block",
+                    }}>74</span>
+                    <span style={{ fontFamily: F.mono, fontSize: 10, color: C.slate }}>this week</span>
                   </div>
                 </div>
 
-                <p style={{ fontFamily: F.body, fontSize: 13, fontWeight: 600, color: C.coal, margin: "0 0 8px" }}>What's included</p>
-                <div style={{ borderTop: `1px solid ${C.smoke}`, marginBottom: 20 }} />
+                {/* Divider */}
+                <div style={{ borderTop: `1px solid ${C.smoke}`, margin: "0 0 20px" }} />
+
+                {/* What's included label */}
+                <p style={{
+                  fontFamily: F.body, fontSize: 11, fontWeight: 600,
+                  letterSpacing: "0.06em", textTransform: "uppercase",
+                  color: C.slate, margin: "0 0 14px",
+                }}>
+                  What's included?
+                </p>
+
+                {/* Feature checklist */}
                 {[
                   "One email. Every Sunday. No logins.",
                   "Five dimensions. All sourced from your data.",
-                  "Connects to Clio, Plaid, Google.",
+                  "Connects to Clio, Plaid, and Google.",
+                  "Your first score, free.",
                 ].map(item => (
-                  <div key={item} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
-                    <span style={{ color: C.ember, fontSize: 13, lineHeight: "20px", flexShrink: 0 }}>✓</span>
-                    <span style={{ fontFamily: F.body, fontSize: 13, color: C.coal, lineHeight: 1.5 }}>{item}</span>
+                  <div key={item} style={{ display: "flex", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
+                    <span style={{
+                      color: C.green, fontSize: 14, lineHeight: "20px",
+                      flexShrink: 0, fontWeight: 700,
+                    }}>✓</span>
+                    <span style={{ fontFamily: F.body, fontSize: 14, color: C.coal, lineHeight: 1.5 }}>{item}</span>
                   </div>
                 ))}
 
+                {/* Dimension score bars — compact */}
+                <div style={{
+                  background: "#F9F8F5", border: `1px solid ${C.smoke}`,
+                  borderRadius: 8, padding: "12px 14px", margin: "16px 0",
+                }}>
+                  {[["Revenue", 12.5], ["Velocity", 17], ["Risk", 16], ["Financial", 13.5], ["Reputation", 13]].map(([label, score]) => (
+                    <div key={String(label)} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontFamily: F.body, fontSize: 11, color: C.slate, width: 68, flexShrink: 0 }}>{label}</span>
+                      <div style={{ flex: 1, height: 4, background: C.smoke, borderRadius: 2 }}>
+                        <div style={{
+                          height: 4, borderRadius: 2,
+                          width: `${(Number(score) / 20) * 100}%`,
+                          background: Number(score) >= 16 ? C.green : Number(score) >= 12 ? C.gold : C.ember,
+                        }} />
+                      </div>
+                      <span style={{ fontFamily: F.mono, fontSize: 10, color: C.slate, width: 30, textAlign: "right" }}>{score}/20</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Green CTA — only green on the page */}
                 <button onClick={onCTA} style={{
-                  width: "100%", marginTop: 8,
-                  background: C.ember, border: "none", cursor: "pointer",
-                  fontFamily: F.body, fontSize: 15, fontWeight: 700, color: C.white,
+                  width: "100%",
+                  background: C.green, border: "none", cursor: "pointer",
+                  fontFamily: F.body, fontSize: 16, fontWeight: 700, color: C.coal,
                   height: 52, borderRadius: 8,
-                  transition: "background 150ms",
+                  transition: "background 150ms, transform 150ms",
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = C.emberDark)}
-                onMouseLeave={e => (e.currentTarget.style.background = C.ember)}
+                onMouseEnter={e => { e.currentTarget.style.background = C.greenDark; e.currentTarget.style.color = C.white }}
+                onMouseLeave={e => { e.currentTarget.style.background = C.green; e.currentTarget.style.color = C.coal }}
                 >
                   Get your first email free
                 </button>
-                <p style={{ fontFamily: F.body, fontSize: 11, color: C.slate, textAlign: "center", marginTop: 10 }}>
-                  30-day money-back. No contract.
+
+                {/* Footer note */}
+                <p style={{ fontFamily: F.body, fontSize: 12, color: C.slate, textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
+                  <a href="#faq" style={{ color: C.slate, textDecoration: "underline" }}>Review all of the FAQs</a>
+                  {" "}before connecting. 30-day money-back.
                 </p>
               </div>
             </div>
@@ -645,7 +683,7 @@ export default function Landing() {
           ].map(({ name, price, period, desc, highlight, cta }) => (
             <div key={name} style={{
               background: C.white,
-              border: `${highlight ? 2 : 1}px solid ${highlight ? C.ember : C.smoke}`,
+              border: `${highlight ? 2 : 1}px solid ${highlight ? C.green : C.smoke}`,
               borderRadius: 12, padding: 32,
             }}>
               {highlight && (
@@ -667,15 +705,15 @@ export default function Landing() {
               <div style={{ borderTop: `1px solid ${C.smoke}`, margin: "0 0 20px" }} />
               <p style={{ fontFamily: F.body, fontSize: 14, color: C.slate, lineHeight: 1.6, margin: "0 0 24px" }}>{desc}</p>
               <button onClick={onCTA} style={{
-                width: "100%", background: highlight ? C.ember : "transparent",
-                border: `1px solid ${highlight ? C.ember : C.smoke}`,
+                width: "100%", background: highlight ? C.green : "transparent",
+                border: `1px solid ${highlight ? C.green : C.smoke}`,
                 borderRadius: 8, cursor: "pointer",
                 fontFamily: F.body, fontSize: 14, fontWeight: 600,
-                color: highlight ? C.white : C.coal,
+                color: highlight ? C.coal : C.coal,
                 height: 44, transition: "all 150ms",
               }}
-              onMouseEnter={e => { const el = e.currentTarget; el.style.background = highlight ? C.emberDark : C.coal; el.style.borderColor = highlight ? C.emberDark : C.coal; el.style.color = C.white }}
-              onMouseLeave={e => { const el = e.currentTarget; el.style.background = highlight ? C.ember : "transparent"; el.style.borderColor = highlight ? C.ember : C.smoke; el.style.color = highlight ? C.white : C.coal }}
+              onMouseEnter={e => { const el = e.currentTarget; el.style.background = highlight ? C.greenDark : C.coal; el.style.borderColor = highlight ? C.greenDark : C.coal; el.style.color = highlight ? C.white : C.white }}
+              onMouseLeave={e => { const el = e.currentTarget; el.style.background = highlight ? C.green : "transparent"; el.style.borderColor = highlight ? C.green : C.smoke; el.style.color = C.coal }}
               >
                 {cta}
               </button>
@@ -791,13 +829,13 @@ export default function Landing() {
             a number they can act on. Sundial is that number. Every week. From your own data.
           </p>
           <button onClick={onCTA} style={{
-            background: C.white, border: "none", cursor: "pointer",
-            fontFamily: F.body, fontSize: 16, fontWeight: 700, color: C.ember,
+            background: C.green, border: "none", cursor: "pointer",
+            fontFamily: F.body, fontSize: 16, fontWeight: 700, color: C.coal,
             padding: "16px 40px", borderRadius: 8,
-            transition: "opacity 150ms, transform 150ms",
+            transition: "background 150ms, transform 150ms",
           }}
-          onMouseEnter={e => { e.currentTarget.style.opacity = "0.92"; e.currentTarget.style.transform = "scale(1.01)" }}
-          onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)" }}
+          onMouseEnter={e => { e.currentTarget.style.background = C.greenDark; e.currentTarget.style.color = C.white; e.currentTarget.style.transform = "scale(1.01)" }}
+          onMouseLeave={e => { e.currentTarget.style.background = C.green; e.currentTarget.style.color = C.coal; e.currentTarget.style.transform = "scale(1)" }}
           >
             Get your first email free
           </button>
