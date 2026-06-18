@@ -3,16 +3,18 @@ import { useNavigate } from "react-router-dom"
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const C = {
-  coal:  "#1A1A1A",
-  ash:   "#F5F4F0",
-  smoke: "#E8E6E1",
-  slate: "#6B6560",
-  ember: "#D94F2B",     // accent only — links, badges, version callout
+  coal:      "#1A1A1A",
+  ash:       "#F5F4F0",
+  smoke:     "#E8E6E1",
+  slate:     "#6B6560",
+  ember:     "#D94F2B",   // accent only — links, badges, version callout
   emberDark: "#B83D1F",
-  gold:  "#C8971A",     // --sundial-gold — score display only
-  green: "#2ECC71",     // --color-campfire-green — primary CTA exclusively
-  greenDark: "#25A85C", // hover state for green
-  white: "#FFFFFF",
+  gold:      "#C8971A",   // score display — brass sundial face
+  oxblood:   "#7F1D1D",   // Tailwind red-900 — our version of Campfire's blue. The wow.
+  amber:     "#D97706",   // Tailwind amber-600 — the ONLY amber on the page. The exhale.
+  amberDark: "#B45309",   // amber-700 — hover state
+  green:     "#2ECC71",   // data viz only — dimension bar "healthy" indicator
+  white:     "#FFFFFF",
 }
 
 const F = {
@@ -175,13 +177,13 @@ export default function Landing() {
               Sign in
             </button>
             <button onClick={onCTA} style={{
-              background: C.green, border: "none", cursor: "pointer",
+              background: C.amber, border: "none", cursor: "pointer",
               fontFamily: F.body, fontSize: 13, fontWeight: 600, color: C.coal,
               padding: "8px 20px", borderRadius: 999,
               transition: "background 150ms, transform 150ms",
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.greenDark; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.02)" }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.green; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.amberDark; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.02)" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.amber; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)" }}
             >
               Get it free
             </button>
@@ -192,7 +194,7 @@ export default function Landing() {
       {/* ════════════════════════════════════════════════════════════════════
           SECTION 1 — HERO
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ backgroundColor: C.ash }}>
+      <section style={{ backgroundColor: C.oxblood }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 32px 96px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 64, alignItems: "start" }}>
 
@@ -201,9 +203,10 @@ export default function Landing() {
               {/* Version badge */}
               <div style={{ display: "inline-block", marginBottom: 28 }}>
                 <span style={{
-                  fontFamily: F.mono, fontSize: 11, color: C.ember,
-                  border: `1px solid ${C.ember}`, borderRadius: 4,
-                  padding: "2px 8px",
+                  fontFamily: F.mono, fontSize: 11,
+                  color: "rgba(245,244,240,0.55)",
+                  border: "1px solid rgba(245,244,240,0.25)",
+                  borderRadius: 4, padding: "2px 8px",
                 }}>
                   2.0
                 </span>
@@ -211,7 +214,7 @@ export default function Landing() {
 
               <h1 style={{
                 fontFamily: F.display, fontSize: "clamp(36px, 4vw, 64px)",
-                fontWeight: 700, lineHeight: 1.1, color: C.coal,
+                fontWeight: 700, lineHeight: 1.1, color: C.ash,
                 letterSpacing: "-0.02em", margin: "0 0 20px",
                 maxWidth: 580,
               }}>
@@ -220,14 +223,14 @@ export default function Landing() {
 
               <p style={{
                 fontFamily: F.display, fontSize: "clamp(20px, 2vw, 28px)",
-                fontWeight: 400, color: C.slate, lineHeight: 1.25,
+                fontWeight: 400, color: "rgba(245,244,240,0.65)", lineHeight: 1.25,
                 margin: "0 0 24px",
               }}>
                 And every number comes from your actual data.
               </p>
 
               <p style={{
-                fontFamily: F.body, fontSize: 17, color: C.coal,
+                fontFamily: F.body, fontSize: 17, color: "rgba(245,244,240,0.85)",
                 lineHeight: 1.65, margin: "0 0 36px", maxWidth: 520,
               }}>
                 If you use Clio, Filevine, or MyCase, you already have the data.
@@ -238,14 +241,15 @@ export default function Landing() {
 
               {/* Sample subject line */}
               <div style={{
-                background: C.coal, borderRadius: 8,
+                background: "rgba(255,255,255,0.10)", borderRadius: 8,
                 padding: "14px 20px", display: "inline-block", marginBottom: 8,
+                border: "1px solid rgba(255,255,255,0.12)",
               }}>
                 <span style={{ fontFamily: F.mono, fontSize: 13, color: C.gold }}>
                   Your Practice Health Score: 74 — down 6 points. Here's why.
                 </span>
               </div>
-              <p style={{ fontFamily: F.body, fontSize: 12, color: C.slate, marginTop: 8, fontStyle: "italic" }}>
+              <p style={{ fontFamily: F.body, fontSize: 12, color: "rgba(245,244,240,0.40)", marginTop: 8, fontStyle: "italic" }}>
                 What Sunday morning looks like.
               </p>
             </div>
@@ -298,7 +302,7 @@ export default function Landing() {
                 ].map(item => (
                   <div key={item} style={{ display: "flex", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
                     <span style={{
-                      color: C.green, fontSize: 14, lineHeight: "20px",
+                      color: C.amber, fontSize: 14, lineHeight: "20px",
                       flexShrink: 0, fontWeight: 700,
                     }}>✓</span>
                     <span style={{ fontFamily: F.body, fontSize: 14, color: C.coal, lineHeight: 1.5 }}>{item}</span>
@@ -325,16 +329,16 @@ export default function Landing() {
                   ))}
                 </div>
 
-                {/* Green CTA — only green on the page */}
+                {/* Amber CTA — the only amber on the page. The exhale. */}
                 <button onClick={onCTA} style={{
                   width: "100%",
-                  background: C.green, border: "none", cursor: "pointer",
+                  background: C.amber, border: "none", cursor: "pointer",
                   fontFamily: F.body, fontSize: 16, fontWeight: 700, color: C.coal,
                   height: 52, borderRadius: 8,
                   transition: "background 150ms, transform 150ms",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = C.greenDark; e.currentTarget.style.color = C.white }}
-                onMouseLeave={e => { e.currentTarget.style.background = C.green; e.currentTarget.style.color = C.coal }}
+                onMouseEnter={e => { e.currentTarget.style.background = C.amberDark; e.currentTarget.style.color = C.white }}
+                onMouseLeave={e => { e.currentTarget.style.background = C.amber; e.currentTarget.style.color = C.coal }}
                 >
                   Get your first email free
                 </button>
@@ -683,7 +687,7 @@ export default function Landing() {
           ].map(({ name, price, period, desc, highlight, cta }) => (
             <div key={name} style={{
               background: C.white,
-              border: `${highlight ? 2 : 1}px solid ${highlight ? C.green : C.smoke}`,
+              border: `${highlight ? 2 : 1}px solid ${highlight ? C.amber : C.smoke}`,
               borderRadius: 12, padding: 32,
             }}>
               {highlight && (
@@ -705,15 +709,15 @@ export default function Landing() {
               <div style={{ borderTop: `1px solid ${C.smoke}`, margin: "0 0 20px" }} />
               <p style={{ fontFamily: F.body, fontSize: 14, color: C.slate, lineHeight: 1.6, margin: "0 0 24px" }}>{desc}</p>
               <button onClick={onCTA} style={{
-                width: "100%", background: highlight ? C.green : "transparent",
-                border: `1px solid ${highlight ? C.green : C.smoke}`,
+                width: "100%", background: highlight ? C.amber : "transparent",
+                border: `1px solid ${highlight ? C.amber : C.smoke}`,
                 borderRadius: 8, cursor: "pointer",
                 fontFamily: F.body, fontSize: 14, fontWeight: 600,
-                color: highlight ? C.coal : C.coal,
+                color: C.coal,
                 height: 44, transition: "all 150ms",
               }}
-              onMouseEnter={e => { const el = e.currentTarget; el.style.background = highlight ? C.greenDark : C.coal; el.style.borderColor = highlight ? C.greenDark : C.coal; el.style.color = highlight ? C.white : C.white }}
-              onMouseLeave={e => { const el = e.currentTarget; el.style.background = highlight ? C.green : "transparent"; el.style.borderColor = highlight ? C.green : C.smoke; el.style.color = C.coal }}
+              onMouseEnter={e => { const el = e.currentTarget; el.style.background = highlight ? C.amberDark : C.coal; el.style.borderColor = highlight ? C.amberDark : C.coal; el.style.color = highlight ? C.white : C.white }}
+              onMouseLeave={e => { const el = e.currentTarget; el.style.background = highlight ? C.amber : "transparent"; el.style.borderColor = highlight ? C.amber : C.smoke; el.style.color = C.coal }}
               >
                 {cta}
               </button>
@@ -829,13 +833,13 @@ export default function Landing() {
             a number they can act on. Sundial is that number. Every week. From your own data.
           </p>
           <button onClick={onCTA} style={{
-            background: C.green, border: "none", cursor: "pointer",
+            background: C.amber, border: "none", cursor: "pointer",
             fontFamily: F.body, fontSize: 16, fontWeight: 700, color: C.coal,
             padding: "16px 40px", borderRadius: 8,
             transition: "background 150ms, transform 150ms",
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.greenDark; e.currentTarget.style.color = C.white; e.currentTarget.style.transform = "scale(1.01)" }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.green; e.currentTarget.style.color = C.coal; e.currentTarget.style.transform = "scale(1)" }}
+          onMouseEnter={e => { e.currentTarget.style.background = C.amberDark; e.currentTarget.style.color = C.white; e.currentTarget.style.transform = "scale(1.01)" }}
+          onMouseLeave={e => { e.currentTarget.style.background = C.amber; e.currentTarget.style.color = C.coal; e.currentTarget.style.transform = "scale(1)" }}
           >
             Get your first email free
           </button>
