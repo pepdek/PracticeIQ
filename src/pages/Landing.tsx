@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 
 const C = {
@@ -24,7 +24,6 @@ const F = {
 
 const CARD_BG = "rgb(249,248,245)"
 const NAV_H   = 56
-const CARD_W  = 320
 
 const TICKER_CARDS = [
   { week: "Jun 15", headline: "Revenue Capture: 12.5/20", body: "AR over 60 days reached $14,200 - up $5,800 from last week. Three invoices past due." },
@@ -38,19 +37,60 @@ const TICKER_CARDS = [
 ]
 
 const FAQS = [
-  { q: "Does Tiata replace Clio or MyCase?",
-    a: "No. It reads from them. You keep using whatever you're using. Tiata surfaces what your software already knows but never tells you." },
+  { q: "Does Taita replace Clio or MyCase?",
+    a: "No. It reads from them. You keep using whatever you're using. Taita surfaces what your software already knows but never tells you." },
   { q: "Is there a dashboard?",
-    a: "No. There is one email per week. If you need to see more than the email shows, open Clio - that's where the data lives. Tiata is the signal, not the system." },
+    a: "No. There is one email per week. If you need to see more than the email shows, open Clio - that's where the data lives. Taita is the signal, not the system." },
   { q: "What does 'read only' mean for my bank account?",
-    a: "Tiata never sees your banking credentials. Plaid handles authentication. Tiata reads deposit amounts and timing only - not transaction descriptions, not client names. Read-only means read-only." },
+    a: "Taita never sees your banking credentials. Plaid handles authentication. Taita reads deposit amounts and timing only - not transaction descriptions, not client names. Read-only means read-only." },
   { q: "What practice management software does it work with?",
     a: "Clio, Filevine, MyCase, Cosmolex, and PracticePanther at launch. Smokeball in Q3." },
   { q: "Is my client data safe?",
-    a: "Tiata reads operational patterns - billing totals, payment timing, matter counts. It never reads client names, case details, or privileged communications. It cannot write to any connected system." },
+    a: "Taita reads operational patterns - billing totals, payment timing, matter counts. It never reads client names, case details, or privileged communications. It cannot write to any connected system." },
   { q: "What if the email isn't useful?",
     a: "Cancel. No contract. We'd rather you not pay than pay for something that doesn't change anything." },
 ]
+
+// ── Easter egg 1: Taita name with pronunciation tooltip ──────────────────────
+function TaitaName({ style }: { style?: React.CSSProperties }) {
+  const [show, setShow] = useState(false)
+  return (
+    <span
+      style={{ position: "relative", display: "inline-block", cursor: "default", ...style }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      Taita
+      {show && (
+        <span style={{
+          position: "absolute", bottom: "calc(100% + 10px)", left: "50%",
+          transform: "translateX(-50%)",
+          background: C.coal, color: C.white,
+          padding: "10px 14px", borderRadius: 8,
+          width: 250, fontSize: 11, lineHeight: 1.65,
+          zIndex: 9999, pointerEvents: "none",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.45)",
+          fontFamily: F.body, fontWeight: 400,
+          whiteSpace: "normal",
+        }}>
+          <span style={{ fontWeight: 700 }}>tai·ta</span>
+          {" "}<span style={{ fontFamily: F.mono, fontSize: 10, opacity: 0.7 }}>/TIE-tuh/</span>
+          {" "}<span style={{ fontStyle: "italic", opacity: 0.55 }}>n.</span>
+          <br />
+          One of earth's rarest raptors. Fewer than 1,000 exist. Nests on cliff faces where others can't follow. Built for attorneys who operate the same way.
+          {/* tooltip arrow */}
+          <span style={{
+            position: "absolute", bottom: -6, left: "50%", transform: "translateX(-50%)",
+            width: 0, height: 0,
+            borderLeft: "6px solid transparent",
+            borderRight: "6px solid transparent",
+            borderTop: `6px solid ${C.coal}`,
+          }} />
+        </span>
+      )}
+    </span>
+  )
+}
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
@@ -62,25 +102,24 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 
 const SEP = "1px solid rgba(255,255,255,0.08)"
 
-// The sticky CTA card — shared between nav (desktop) and inline (mobile)
+// ── CTA card — lives in nav on desktop ───────────────────────────────────────
 function CtaCard({ onCTA }: { onCTA: () => void }) {
   return (
     <>
-      {/* Header — white, exactly nav height, both rows stacked inside */}
+      {/* Header — white, exactly nav height */}
       <div style={{ background: C.white, height: NAV_H, padding: "0 20px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 3, boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }}>
-        {/* Row 1: wordmark + score */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p style={{ fontFamily: F.body, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.coal, margin: 0 }}>Tiata</p>
+          <p style={{ fontFamily: F.body, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.coal, margin: 0 }}>
+            <TaitaName />
+          </p>
           <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
             <span style={{ fontFamily: F.display, fontSize: 26, fontWeight: 700, lineHeight: 1, color: C.accent }}>74</span>
             <span style={{ fontFamily: F.mono, fontSize: 9, color: C.slate }}>this week</span>
           </div>
         </div>
-        {/* Row 2: tagline */}
         <p style={{ fontFamily: F.mono, fontSize: 9, color: C.slate, margin: 0 }}>one number. every week.</p>
       </div>
 
-      {/* Divider */}
       <div style={{ height: 1, background: C.smoke }} />
 
       {/* Body — warm off-white */}
@@ -103,13 +142,14 @@ function CtaCard({ onCTA }: { onCTA: () => void }) {
             </div>
           ))}
         </div>
-        <button onClick={onCTA} style={{ width: "100%", background: C.cta, border: "none", cursor: "pointer", fontFamily: F.body, fontSize: 14, fontWeight: 700, color: C.coal, height: 42, borderRadius: 8, transition: "background 150ms" }}
+        <button onClick={onCTA}
+          style={{ width: "100%", background: C.cta, border: "none", cursor: "pointer", fontFamily: F.body, fontSize: 14, fontWeight: 700, color: C.coal, height: 42, borderRadius: 8, transition: "background 150ms" }}
           onMouseEnter={e => (e.currentTarget.style.background = C.ctaDark)}
           onMouseLeave={e => (e.currentTarget.style.background = C.cta)}
         >Get your first email free</button>
       </div>
 
-      {/* FAQ — below the card, in the sidebar */}
+      {/* FAQ link below card */}
       <p style={{ fontFamily: F.body, fontSize: 11, color: "rgba(153,246,228,0.45)", textAlign: "center", margin: "12px 0 0", lineHeight: 1.5 }}>
         <a href="#faq" style={{ color: "rgba(153,246,228,0.6)", textDecoration: "underline", fontWeight: 600 }}>Review all of the FAQs</a>{" "}before connecting. 30-day money-back.
       </p>
@@ -117,22 +157,63 @@ function CtaCard({ onCTA }: { onCTA: () => void }) {
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function Landing() {
   const navigate = useNavigate()
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const onCTA = () => navigate("/onboarding")
 
+  // ── Easter egg 2: idle page title ──────────────────────────────────────────
+  useEffect(() => {
+    const IDLE_MS    = 60_000
+    const idleTitle  = "Still here. Your Taita arrives Sunday."
+    const origTitle  = document.title
+    let timer: ReturnType<typeof setTimeout>
+
+    const resetTimer = () => {
+      clearTimeout(timer)
+      if (document.title === idleTitle) document.title = origTitle
+      timer = setTimeout(() => { document.title = idleTitle }, IDLE_MS)
+    }
+
+    const events = ["mousemove", "keydown", "scroll", "click", "touchstart"] as const
+    events.forEach(ev => window.addEventListener(ev, resetTimer, { passive: true }))
+    timer = setTimeout(() => { document.title = idleTitle }, IDLE_MS)
+
+    return () => {
+      clearTimeout(timer)
+      document.title = origTitle
+      events.forEach(ev => window.removeEventListener(ev, resetTimer))
+    }
+  }, [])
+
+  // ── Easter egg 3: scroll-reveal falcon line (pricing section bottom) ────────
+  const falconRef  = useRef<HTMLDivElement>(null)
+  const [falconSeen, setFalconSeen] = useState(false)
+
+  useEffect(() => {
+    const el = falconRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setFalconSeen(true) },
+      { threshold: 0.9 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
   return (
     <div style={{ backgroundColor: C.bg, fontFamily: F.body, color: C.body }}>
 
       <style>{`
-        @keyframes sundial-ticker {
+        @keyframes taita-ticker {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
         .ticker-track {
           display: flex; width: max-content; will-change: transform;
-          animation: sundial-ticker 40s linear infinite;
+          animation: taita-ticker 40s linear infinite;
         }
         .ticker-track:hover { animation-play-state: paused; }
         html { scroll-behavior: smooth; }
@@ -141,7 +222,6 @@ export default function Landing() {
         .desktop-only { display: flex; }
         .mobile-only  { display: none; }
 
-        /* Page grid — left content col + gap + spacer matching card width */
         .page-grid {
           display: grid;
           grid-template-columns: 60fr 10fr 30fr;
@@ -151,13 +231,12 @@ export default function Landing() {
           padding: 0 32px;
         }
         .page-left  { min-width: 0; }
-        .page-right { grid-column: 3; } /* empty spacer — card lives in nav */
+        .page-right { grid-column: 3; }
 
         .grid-2    { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
         .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
         .table-wrap { width: 100%; overflow-x: auto; }
 
-        /* Desktop nav card — fills the 30fr sidebar column exactly */
         .nav-card {
           position: absolute;
           right: 32px;
@@ -175,7 +254,7 @@ export default function Landing() {
           .mobile-only  { display: flex !important; }
           .page-grid    { grid-template-columns: 1fr; padding: 0 20px; }
           .page-right   { display: none; }
-          .nav-card     { display: none; }
+          .nav-card     { display: none !important; }
           .grid-2       { grid-template-columns: 1fr; }
           .grid-auto    { grid-template-columns: 1fr; }
           .mobile-cta   {
@@ -188,21 +267,14 @@ export default function Landing() {
         }
       `}</style>
 
-      {/* ── NAV ── sticky, overflow visible so card hangs below */}
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 100,
-        height: NAV_H, backgroundColor: C.bg,
-        borderBottom: SEP,
-        overflow: "visible",
-      }}>
+      {/* ── NAV ─────────────────────────────────────────────────────────────── */}
+      <nav style={{ position: "sticky", top: 0, zIndex: 100, height: NAV_H, backgroundColor: C.bg, borderBottom: SEP, overflow: "visible" }}>
         <div style={{ maxWidth: 1200, width: "100%", margin: "0 auto", height: "100%", display: "flex", alignItems: "center", padding: "0 32px", position: "relative" }}>
 
-          {/* Wordmark */}
           <span style={{ fontFamily: F.body, fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: C.headline, flexShrink: 0 }}>
-            Tiata
+            <TaitaName style={{ letterSpacing: "0.12em" }} />
           </span>
 
-          {/* Nav links — left side, after wordmark */}
           <div className="desktop-only" style={{ gap: 28, alignItems: "center", marginLeft: 40 }}>
             {[["#overview","Overview"],["#use-cases","Use Cases"],["#","Changelog"],["https://github.com/pepdek/PracticeIQ","GitHub"]].map(([href, label]) => (
               <a key={label} href={href}
@@ -215,28 +287,26 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Mobile CTA pill */}
           <button className="mobile-only" onClick={onCTA} style={{ marginLeft: "auto", background: C.cta, border: "none", cursor: "pointer", fontFamily: F.body, fontSize: 13, fontWeight: 600, color: C.coal, padding: "8px 16px", borderRadius: 999 }}>
             Get it free
           </button>
 
-          {/* CTA card anchored to top-right of nav, overflowing below */}
           <div className="nav-card desktop-only">
             <CtaCard onCTA={onCTA} />
           </div>
         </div>
       </nav>
 
-      {/* ── PAGE GRID — left content / empty spacer for card column ── */}
+      {/* ── PAGE GRID ────────────────────────────────────────────────────────── */}
       <div className="page-grid">
-
-        {/* LEFT COLUMN */}
         <div className="page-left">
 
           {/* HERO */}
           <div style={{ padding: "80px 0 88px" }}>
             <div style={{ display: "inline-block", marginBottom: 28 }}>
-              <span style={{ fontFamily: F.mono, fontSize: 11, color: "rgba(153,246,228,0.5)", border: "1px solid rgba(153,246,228,0.2)", borderRadius: 4, padding: "2px 8px" }}>Tiata 2.0</span>
+              <span style={{ fontFamily: F.mono, fontSize: 11, color: "rgba(153,246,228,0.5)", border: "1px solid rgba(153,246,228,0.2)", borderRadius: 4, padding: "2px 8px" }}>
+                <TaitaName /> 2.0
+              </span>
             </div>
             <h1 style={{ fontFamily: F.display, fontSize: "clamp(32px, 3.5vw, 60px)", fontWeight: 700, lineHeight: 1.1, color: C.headline, letterSpacing: "-0.02em", margin: "0 0 20px" }}>
               Practice intelligence for solo and small law firms. Without the guesswork.
@@ -244,10 +314,13 @@ export default function Landing() {
             <p style={{ fontFamily: F.display, fontSize: "clamp(17px, 1.8vw, 24px)", fontWeight: 400, color: "rgba(153,246,228,0.70)", lineHeight: 1.25, margin: "0 0 24px" }}>
               And every number comes from your actual data.
             </p>
-            <p style={{ fontFamily: F.body, fontSize: "clamp(14px, 1.1vw, 16px)", color: C.body, lineHeight: 1.65, margin: "0 0 36px", maxWidth: 480 }}>
+            <p style={{ fontFamily: F.body, fontSize: "clamp(14px, 1.1vw, 16px)", color: C.body, lineHeight: 1.65, margin: "0 0 16px", maxWidth: 480 }}>
               If you use Clio, Filevine, or MyCase, you already have the data.
-              Connect once. Tiata reads it in the background. One email, every Sunday.
+              Connect once. Taita reads it in the background. One email, every Sunday.
               You know more about your practice than you ever have - without changing anything.
+            </p>
+            <p style={{ fontFamily: F.body, fontSize: "clamp(13px, 1vw, 15px)", color: "rgba(153,246,228,0.5)", lineHeight: 1.65, margin: "0 0 36px", maxWidth: 480, fontStyle: "italic" }}>
+              Named for a raptor that nests on cliff faces where others can't follow. Built for attorneys who operate the same way.
             </p>
             <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "14px 20px", display: "inline-block", border: "1px solid rgba(255,255,255,0.12)" }}>
               <span style={{ fontFamily: F.mono, fontSize: 13, color: C.accent }}>
@@ -312,7 +385,7 @@ export default function Landing() {
                 </p>
                 <p style={{ fontFamily: F.body, fontSize: 14, color: C.body, lineHeight: 1.65, margin: 0 }}>
                   Practice management software was built to manage cases, not to run businesses.
-                  Attorneys who connect Tiata see their practice differently within one email.
+                  Attorneys who connect Taita see their practice differently within one email.
                 </p>
               </div>
             </div>
@@ -339,16 +412,16 @@ export default function Landing() {
           <div style={{ borderTop: SEP, padding: "88px 0" }} id="use-cases">
             <Eyebrow>It fits wherever you are</Eyebrow>
             <h2 style={{ fontFamily: F.display, fontSize: "clamp(22px, 2.2vw, 34px)", fontWeight: 700, lineHeight: 1.1, color: C.headline, letterSpacing: "-0.02em", margin: "0 0 36px" }}>
-              It fits in a lot of places.
+              Built for the attorneys large firms overlook.
             </h2>
             <div className="grid-auto">
               {[
-                { title: "If you're a solo flying by feel.", body: "You track some numbers - a rough sense of realization, a month-end spreadsheet. Tiata gives you the next level of clarity without hiring an office manager." },
-                { title: "If you're managing 3-8 attorneys.", body: "You're a managing partner by necessity, not by choice. You know something's wrong with the numbers but can't see what. Tiata shows you." },
+                { title: "If you're a solo flying by feel.", body: "You track some numbers - a rough sense of realization, a month-end spreadsheet. Taita gives you the next level of clarity without hiring an office manager." },
+                { title: "If you're managing 3-8 attorneys.", body: "You're a managing partner by necessity, not by choice. You know something's wrong with the numbers but can't see what. Taita shows you." },
                 { title: "If you've been burned by dashboards before.", body: "There is no dashboard. There is one email. It arrives. You read it. That's the product." },
-                { title: "If you're on Clio.", body: "You're already connected. Tiata adds Plaid and Google. Ten-minute setup. First email Sunday." },
+                { title: "If you're on Clio.", body: "You're already connected. Taita adds Plaid and Google. Ten-minute setup. First email Sunday." },
                 { title: "If you're on Filevine or MyCase.", body: "Same email. Same intelligence. Your software's data, finally surfaced." },
-                { title: "If you're growing intentionally.", body: "Tiata tells you your intake conversion rate - of every consultation booked, how many became retained matters. That tells you exactly where your marketing spend is working." },
+                { title: "If you're growing intentionally.", body: "Taita tells you your intake conversion rate - of every consultation booked, how many became retained matters. That tells you exactly where your marketing spend is working." },
               ].map(({ title, body }) => (
                 <div key={title} style={{ background: C.white, borderRadius: 8, padding: 20, transition: "box-shadow 150ms" }}
                   onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.30)")}
@@ -395,7 +468,7 @@ export default function Landing() {
               </table>
             </div>
             <p style={{ fontFamily: F.body, fontSize: 12, color: "rgba(153,246,228,0.30)", marginTop: 16, fontStyle: "italic" }}>
-              Tiata never writes to your software. It reads. Your data stays where it lives.
+              Taita never writes to your software. It reads. Your data stays where it lives.
             </p>
           </div>
 
@@ -406,10 +479,9 @@ export default function Landing() {
               Pay once a month. Know your practice forever.
             </h2>
             <p style={{ fontFamily: F.body, fontSize: 15, color: "rgba(153,246,228,0.60)", margin: "0 0 36px", lineHeight: 1.6 }}>
-              One hour of recovered billing pays for six months of Tiata.
+              One hour of recovered billing pays for six months of Taita.
             </p>
             <div className="grid-2">
-              {/* Early access */}
               <div style={{ background: C.white, border: `2px solid ${C.cta}`, borderRadius: 12, padding: 22, boxShadow: "0 8px 32px rgba(0,0,0,0.30)" }}>
                 <div style={{ marginBottom: 8 }}>
                   <span style={{ fontFamily: F.body, fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: C.accent, background: "rgba(20,184,166,0.10)", borderRadius: 999, padding: "3px 9px" }}>First 50 attorneys</span>
@@ -430,7 +502,6 @@ export default function Landing() {
                 >Claim your spot</button>
               </div>
 
-              {/* Standard */}
               <div style={{ background: C.white, border: `1px solid rgba(255,255,255,0.15)`, borderRadius: 12, padding: 22 }}>
                 <p style={{ fontFamily: F.body, fontSize: 11, fontWeight: 600, color: C.slate, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.07em" }}>Standard</p>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4, margin: "0 0 12px" }}>
@@ -451,6 +522,20 @@ export default function Landing() {
             <p style={{ fontFamily: F.body, fontSize: 12, color: "rgba(153,246,228,0.35)", marginTop: 20, fontStyle: "italic" }}>
               No free trial. 30-day money-back guarantee. No contract.
             </p>
+
+            {/* ── Easter egg 3: falcon line, only visible on scroll ── */}
+            <div ref={falconRef} style={{
+              marginTop: 48,
+              opacity: falconSeen ? 1 : 0,
+              transition: "opacity 1.4s ease",
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              paddingTop: 24,
+            }}>
+              <p style={{ fontFamily: F.display, fontSize: 14, fontStyle: "italic", color: "rgba(153,246,228,0.30)", margin: 0, lineHeight: 1.7 }}>
+                Fewer than 1,000 Taita falcons exist on earth.<br />
+                This report was built for someone equally rare.
+              </p>
+            </div>
           </div>
 
           {/* FAQ */}
@@ -474,17 +559,16 @@ export default function Landing() {
           </div>
 
         </div>{/* end page-left */}
-
-        {/* RIGHT COLUMN — empty spacer so content doesn't slide under the nav card */}
         <div className="page-right" />
+      </div>
 
-      </div>{/* end page-grid */}
-
-      {/* FOOTER */}
+      {/* ── FOOTER ───────────────────────────────────────────────────────────── */}
       <footer style={{ backgroundColor: C.bgDim, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "48px 32px 36px" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 48, flexWrap: "wrap", marginBottom: 32 }}>
-            <p style={{ fontFamily: F.body, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.headline, margin: 0 }}>Tiata</p>
+            <p style={{ fontFamily: F.body, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.headline, margin: 0 }}>
+              <TaitaName />
+            </p>
             <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
               {[["#overview","Overview"],["#use-cases","Use Cases"],["#pricing","Pricing"],["#faq","FAQ"],["#","Changelog"],["https://github.com/pepdek/PracticeIQ","GitHub"]].map(([href, label]) => (
                 <a key={label} href={href}
@@ -498,13 +582,12 @@ export default function Landing() {
             </div>
           </div>
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 18, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-            <p style={{ fontFamily: F.body, fontSize: 11, color: "rgba(153,246,228,0.20)", margin: 0 }}>© 2026 LawStack Inc. All rights reserved.</p>
-            <p style={{ fontFamily: F.body, fontSize: 11, color: "rgba(153,246,228,0.20)", margin: 0 }}>legal@lawstack.co · privacy@lawstack.co</p>
+            <p style={{ fontFamily: F.body, fontSize: 11, color: "rgba(153,246,228,0.20)", margin: 0 }}>© 2026 Taita Law Inc. All rights reserved.</p>
+            <p style={{ fontFamily: F.body, fontSize: 11, color: "rgba(153,246,228,0.20)", margin: 0 }}>legal@taita.law · privacy@taita.law</p>
           </div>
         </div>
       </footer>
 
-      {/* Mobile sticky bar */}
       <div className="mobile-cta">
         <button onClick={onCTA} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: F.body, fontSize: 15, fontWeight: 700, color: C.coal, width: "100%", padding: "4px 0" }}>
           Get your first email free →
