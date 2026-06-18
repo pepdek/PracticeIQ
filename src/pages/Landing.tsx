@@ -3,17 +3,17 @@ import { useNavigate } from "react-router-dom"
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const C = {
-  oxblood:   "#7F1D1D",   // Tailwind red-900 — entire site bg. The wow.
-  oxbloodDim: "#6B1818",  // footer/CTA band — barely perceptible depth
+  oxblood:   "#7F1D1D",   // Tailwind red-900 - entire site bg. The wow.
+  oxbloodDim: "#6B1818",  // footer/CTA band - barely perceptible depth
   ash:       "#F5F4F0",
   smoke:     "#E8E6E1",
   slate:     "#6B6560",
   coal:      "#1A1A1A",
-  ember:     "#D94F2B",   // accent only — badges
-  gold:      "#C8971A",   // score display — brass sundial face
-  amber:     "#D97706",   // Tailwind amber-600 — the ONLY amber. The exhale.
+  ember:     "#D94F2B",   // accent only - badges
+  gold:      "#C8971A",   // score display - brass sundial face
+  amber:     "#D97706",   // Tailwind amber-600 - the ONLY amber. The exhale.
   amberDark: "#B45309",
-  green:     "#2ECC71",   // data viz only — healthy indicator
+  green:     "#2ECC71",   // data viz only - healthy indicator
   white:     "#FFFFFF",
 }
 
@@ -24,9 +24,9 @@ const F = {
 }
 
 const TICKER_CARDS = [
-  { week: "Jun 15", headline: "Revenue Capture: 12.5/20", body: "AR over 60 days reached $14,200 — up $5,800 from last week. Three invoices past due." },
+  { week: "Jun 15", headline: "Revenue Capture: 12.5/20", body: "AR over 60 days reached $14,200 - up $5,800 from last week. Three invoices past due." },
   { week: "Jun 22", headline: "Practice Velocity: 17/20", body: "Active matters at 12-week high. 3 opened, 1 closed. Pipeline direction: positive." },
-  { week: "Jun 8",  headline: "Risk Exposure: 8/20",      body: "Trust balance dipped to $320 — below the $500 threshold. Review before Thursday." },
+  { week: "Jun 8",  headline: "Risk Exposure: 8/20",      body: "Trust balance dipped to $320 - below the $500 threshold. Review before Thursday." },
   { week: "May 25", headline: "Collection rate: 91%",     body: "Best 4-week average in 8 months. 14.2 hours billed, 12.9 collected." },
   { week: "Jun 1",  headline: "Financial Position: 13.5/20", body: "Operating balance 18% below 90-day average. $28k invoiced, $12.4k deposited this week." },
   { week: "Jun 29", headline: "Reputation: 4.8 ★",        body: "No new reviews this week. Last review 23 days ago. Velocity below baseline." },
@@ -38,13 +38,13 @@ const FAQS = [
   { q: "Does Sundial replace Clio or MyCase?",
     a: "No. It reads from them. You keep using whatever you're using. Sundial surfaces what your software already knows but never tells you." },
   { q: "Is there a dashboard?",
-    a: "No. There is one email per week. If you need to see more than the email shows, open Clio — that's where the data lives. Sundial is the signal, not the system." },
+    a: "No. There is one email per week. If you need to see more than the email shows, open Clio - that's where the data lives. Sundial is the signal, not the system." },
   { q: "What does 'read only' mean for my bank account?",
-    a: "Sundial never sees your banking credentials. Plaid handles authentication. Sundial reads deposit amounts and timing only — not transaction descriptions, not client names. Read-only means read-only." },
+    a: "Sundial never sees your banking credentials. Plaid handles authentication. Sundial reads deposit amounts and timing only - not transaction descriptions, not client names. Read-only means read-only." },
   { q: "What practice management software does it work with?",
     a: "Clio, Filevine, MyCase, Cosmolex, and PracticePanther at launch. Smokeball in Q3." },
   { q: "Is my client data safe?",
-    a: "Sundial reads operational patterns — billing totals, payment timing, matter counts. It never reads client names, case details, or privileged communications. It cannot write to any connected system." },
+    a: "Sundial reads operational patterns - billing totals, payment timing, matter counts. It never reads client names, case details, or privileged communications. It cannot write to any connected system." },
   { q: "What if the email isn't useful?",
     a: "Cancel. No contract. We'd rather you not pay than pay for something that doesn't change anything." },
 ]
@@ -127,7 +127,7 @@ export default function Landing() {
             Sundial
           </span>
 
-          {/* Center links — desktop */}
+          {/* Center links - desktop */}
           <div className="desktop-only" style={{ gap: 32, alignItems: "center" }}>
             {[["#overview", "Overview"], ["#use-cases", "Use Cases"], ["#", "Changelog"], ["https://github.com/pepdek/PracticeIQ", "GitHub"]].map(([href, label]) => (
               <a key={label} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
@@ -138,7 +138,7 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Right — compact post-it card (desktop) */}
+          {/* Right - compact post-it card (desktop) */}
           <div className="desktop-only" style={{ alignItems: "center" }}>
             <div style={{
               background: C.white, borderRadius: 8, height: 40,
@@ -214,7 +214,7 @@ export default function Landing() {
               }}>
                 If you use Clio, Filevine, or MyCase, you already have the data.
                 Connect once. Sundial reads it in the background. One email, every Sunday.
-                You know more about your practice than you ever have — without changing anything.
+                You know more about your practice than you ever have - without changing anything.
               </p>
 
               <div style={{
@@ -223,7 +223,7 @@ export default function Landing() {
                 border: "1px solid rgba(255,255,255,0.12)",
               }}>
                 <span style={{ fontFamily: F.mono, fontSize: 13, color: C.gold }}>
-                  Your Practice Health Score: 74 — down 6 points. Here's why.
+                  Your Practice Health Score: 74 - down 6 points. Here's why.
                 </span>
               </div>
               <p style={{ fontFamily: F.body, fontSize: 12, color: "rgba(245,244,240,0.35)", marginTop: 8, fontStyle: "italic" }}>
@@ -231,7 +231,7 @@ export default function Landing() {
               </p>
             </div>
 
-            {/* Right — post-it CTA card */}
+            {/* Right - post-it CTA card */}
             <div style={{ position: "sticky", top: 72 }}>
               <div style={{
                 background: C.white, borderRadius: 12, padding: 28,
@@ -355,7 +355,7 @@ export default function Landing() {
                 That they can't tell, right now, whether their practice is growing or slowly dying."
               </blockquote>
               <p style={{ fontFamily: F.body, fontSize: 13, color: "rgba(245,244,240,0.30)", paddingLeft: 24 }}>
-                That's not a software gap. That's a structural failure of an entire industry — accepted as normal for thirty years.
+                That's not a software gap. That's a structural failure of an entire industry - accepted as normal for thirty years.
               </p>
             </div>
             <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 10, padding: "28px 32px" }}>
@@ -409,12 +409,12 @@ export default function Landing() {
           </h2>
           <div className="grid-auto">
             {[
-              { title: "If you're a solo flying by feel.", body: "You track some numbers — a rough sense of realization, a month-end spreadsheet. Sundial gives you the next level of clarity without hiring an office manager." },
+              { title: "If you're a solo flying by feel.", body: "You track some numbers - a rough sense of realization, a month-end spreadsheet. Sundial gives you the next level of clarity without hiring an office manager." },
               { title: "If you're managing 3–8 attorneys.", body: "You're a managing partner by necessity, not by choice. You know something's wrong with the numbers but can't see what. Sundial shows you." },
               { title: "If you've been burned by dashboards before.", body: "There is no dashboard. There is one email. It arrives. You read it. That's the product." },
               { title: "If you're on Clio.", body: "You're already connected. Sundial adds Plaid and Google. Ten-minute setup. First email Sunday." },
               { title: "If you're on Filevine or MyCase.", body: "Same email. Same intelligence. Your software's data, finally surfaced." },
-              { title: "If you're growing intentionally.", body: "Sundial tells you your intake conversion rate — of every consultation booked, how many became retained matters. That number tells you exactly where your marketing spend is working." },
+              { title: "If you're growing intentionally.", body: "Sundial tells you your intake conversion rate - of every consultation booked, how many became retained matters. That number tells you exactly where your marketing spend is working." },
             ].map(({ title, body }) => (
               <div key={title} style={{ background: C.white, borderRadius: 8, padding: 24, transition: "box-shadow 150ms" }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.30)")}
@@ -448,11 +448,11 @@ export default function Landing() {
               </thead>
               <tbody>
                 {[
-                  ["Clio", "OAuth — one click", "Matters, time, invoices, AR aging, billing rates"],
-                  ["Filevine", "OAuth — one click", "Matters, tasks, contacts, billing"],
-                  ["MyCase", "OAuth — one click", "Matters, time entries, invoices"],
-                  ["Plaid", "Plaid Link — read only", "Cash position, deposit timing, trust account balance"],
-                  ["QuickBooks Online", "OAuth — one click", "P&L, expenses, payroll"],
+                  ["Clio", "OAuth - one click", "Matters, time, invoices, AR aging, billing rates"],
+                  ["Filevine", "OAuth - one click", "Matters, tasks, contacts, billing"],
+                  ["MyCase", "OAuth - one click", "Matters, time entries, invoices"],
+                  ["Plaid", "Plaid Link - read only", "Cash position, deposit timing, trust account balance"],
+                  ["QuickBooks Online", "OAuth - one click", "P&L, expenses, payroll"],
                   ["Google Business Profile", "Google OAuth", "Reviews, rating, referral velocity"],
                 ].map(([platform, conn, what]) => (
                   <tr key={platform} style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
