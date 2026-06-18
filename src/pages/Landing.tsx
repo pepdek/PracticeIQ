@@ -66,13 +66,13 @@ const SEP = "1px solid rgba(255,255,255,0.08)"
 function CtaCard({ onCTA }: { onCTA: () => void }) {
   return (
     <>
-      {/* Header — white, with stacked tagline */}
-      <div style={{ background: C.white, padding: "0 20px 14px", borderRadius: "0 0 0 0", boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }}>
+      {/* Header — white, exactly nav height, both rows stacked inside */}
+      <div style={{ background: C.white, height: NAV_H, padding: "0 20px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 3, boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }}>
         {/* Row 1: wordmark + score */}
-        <div style={{ height: NAV_H, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <p style={{ fontFamily: F.body, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.coal, margin: 0 }}>Tiata</p>
           <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
-            <span style={{ fontFamily: F.display, fontSize: 30, fontWeight: 700, lineHeight: 1, color: C.accent }}>74</span>
+            <span style={{ fontFamily: F.display, fontSize: 26, fontWeight: 700, lineHeight: 1, color: C.accent }}>74</span>
             <span style={{ fontFamily: F.mono, fontSize: 9, color: C.slate }}>this week</span>
           </div>
         </div>
@@ -157,13 +157,15 @@ export default function Landing() {
         .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
         .table-wrap { width: 100%; overflow-x: auto; }
 
-        /* Desktop nav card */
+        /* Desktop nav card — fills the 30fr sidebar column exactly */
         .nav-card {
           position: absolute;
           right: 32px;
           top: 0;
-          width: ${CARD_W}px;
+          width: calc((100% - 64px) * 0.30);
           z-index: 10;
+          display: flex !important;
+          flex-direction: column;
         }
 
         .mobile-cta { display: none; }
@@ -406,32 +408,45 @@ export default function Landing() {
             <p style={{ fontFamily: F.body, fontSize: 15, color: "rgba(153,246,228,0.60)", margin: "0 0 36px", lineHeight: 1.6 }}>
               One hour of recovered billing pays for six months of Tiata.
             </p>
-            <div className="grid-auto">
-              {[
-                { name: "Solo", price: "$149", period: "/mo", desc: "One attorney. One practice management connection. Plaid. Google. The weekly email that changes how you see your own business.", highlight: false, ctaLabel: "Get started" },
-                { name: "Firm", price: "$299", period: "/mo", desc: "Up to four attorneys. Multi-platform support. Every attorney gets their own email. You get the firm-level roll-up.", highlight: true, ctaLabel: "Get started" },
-                { name: "LawStack", price: "$99", period: "/mo for 6 mo", desc: "Already on LawStack? Your Clio connection already exists. Add Plaid. Add Google. Ten minutes.", highlight: false, ctaLabel: "Sign in with LawStack" },
-              ].map(({ name, price, period, desc, highlight, ctaLabel }) => (
-                <div key={name} style={{ background: C.white, border: `${highlight ? 2 : 1}px solid ${highlight ? C.cta : "rgba(255,255,255,0.15)"}`, borderRadius: 12, padding: 22, boxShadow: highlight ? "0 8px 32px rgba(0,0,0,0.30)" : "none" }}>
-                  {highlight && (
-                    <div style={{ marginBottom: 8 }}>
-                      <span style={{ fontFamily: F.body, fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: C.accent, background: "rgba(20,184,166,0.10)", borderRadius: 999, padding: "3px 9px" }}>Most popular</span>
-                    </div>
-                  )}
-                  <p style={{ fontFamily: F.body, fontSize: 11, fontWeight: 600, color: C.slate, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.07em" }}>{name}</p>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, margin: "0 0 12px" }}>
-                    <span style={{ fontFamily: F.display, fontSize: 34, fontWeight: 700, color: C.coal, lineHeight: 1 }}>{price}</span>
-                    <span style={{ fontFamily: F.body, fontSize: 12, color: C.slate }}>{period}</span>
-                  </div>
-                  <div style={{ borderTop: `1px solid ${C.smoke}`, margin: "0 0 12px" }} />
-                  <p style={{ fontFamily: F.body, fontSize: 12, color: C.slate, lineHeight: 1.6, margin: "0 0 16px" }}>{desc}</p>
-                  <button onClick={onCTA}
-                    style={{ width: "100%", background: highlight ? C.cta : "transparent", border: `1px solid ${highlight ? C.cta : C.smoke}`, borderRadius: 8, cursor: "pointer", fontFamily: F.body, fontSize: 12, fontWeight: 600, color: C.coal, height: 38, transition: "all 150ms" }}
-                    onMouseEnter={e => { const el = e.currentTarget; el.style.background = highlight ? C.ctaDark : C.coal; el.style.borderColor = highlight ? C.ctaDark : C.coal; el.style.color = C.white }}
-                    onMouseLeave={e => { const el = e.currentTarget; el.style.background = highlight ? C.cta : "transparent"; el.style.borderColor = highlight ? C.cta : C.smoke; el.style.color = C.coal }}
-                  >{ctaLabel}</button>
+            <div className="grid-2">
+              {/* Early access */}
+              <div style={{ background: C.white, border: `2px solid ${C.cta}`, borderRadius: 12, padding: 22, boxShadow: "0 8px 32px rgba(0,0,0,0.30)" }}>
+                <div style={{ marginBottom: 8 }}>
+                  <span style={{ fontFamily: F.body, fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: C.accent, background: "rgba(20,184,166,0.10)", borderRadius: 999, padding: "3px 9px" }}>First 50 attorneys</span>
                 </div>
-              ))}
+                <p style={{ fontFamily: F.body, fontSize: 11, fontWeight: 600, color: C.slate, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.07em" }}>Early Access</p>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 4, margin: "0 0 12px" }}>
+                  <span style={{ fontFamily: F.display, fontSize: 34, fontWeight: 700, color: C.coal, lineHeight: 1 }}>$99</span>
+                  <span style={{ fontFamily: F.body, fontSize: 12, color: C.slate }}>/mo</span>
+                </div>
+                <div style={{ borderTop: `1px solid ${C.smoke}`, margin: "0 0 12px" }} />
+                <p style={{ fontFamily: F.body, fontSize: 12, color: C.slate, lineHeight: 1.6, margin: "0 0 16px" }}>
+                  Locked in for life. When the first 50 spots are gone, this price is gone forever. You'll never pay more.
+                </p>
+                <button onClick={onCTA}
+                  style={{ width: "100%", background: C.cta, border: `1px solid ${C.cta}`, borderRadius: 8, cursor: "pointer", fontFamily: F.body, fontSize: 12, fontWeight: 600, color: C.coal, height: 38, transition: "all 150ms" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = C.ctaDark; e.currentTarget.style.borderColor = C.ctaDark }}
+                  onMouseLeave={e => { e.currentTarget.style.background = C.cta; e.currentTarget.style.borderColor = C.cta }}
+                >Claim your spot</button>
+              </div>
+
+              {/* Standard */}
+              <div style={{ background: C.white, border: `1px solid rgba(255,255,255,0.15)`, borderRadius: 12, padding: 22 }}>
+                <p style={{ fontFamily: F.body, fontSize: 11, fontWeight: 600, color: C.slate, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.07em" }}>Standard</p>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 4, margin: "0 0 12px" }}>
+                  <span style={{ fontFamily: F.display, fontSize: 34, fontWeight: 700, color: C.coal, lineHeight: 1 }}>$299</span>
+                  <span style={{ fontFamily: F.body, fontSize: 12, color: C.slate }}>/mo</span>
+                </div>
+                <div style={{ borderTop: `1px solid ${C.smoke}`, margin: "0 0 12px" }} />
+                <p style={{ fontFamily: F.body, fontSize: 12, color: C.slate, lineHeight: 1.6, margin: "0 0 16px" }}>
+                  The regular price once early access closes. Everything included. No tiers. No add-ons.
+                </p>
+                <button onClick={onCTA}
+                  style={{ width: "100%", background: "transparent", border: `1px solid ${C.smoke}`, borderRadius: 8, cursor: "pointer", fontFamily: F.body, fontSize: 12, fontWeight: 600, color: C.coal, height: 38, transition: "all 150ms" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = C.coal; e.currentTarget.style.borderColor = C.coal; e.currentTarget.style.color = C.white }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = C.smoke; e.currentTarget.style.color = C.coal }}
+                >Get started</button>
+              </div>
             </div>
             <p style={{ fontFamily: F.body, fontSize: 12, color: "rgba(153,246,228,0.35)", marginTop: 20, fontStyle: "italic" }}>
               No free trial. 30-day money-back guarantee. No contract.
